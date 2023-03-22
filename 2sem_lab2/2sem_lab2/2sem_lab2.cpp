@@ -113,7 +113,6 @@ fibonacci_heap *fib_heap_make() {
 
 
 fibonacci_heap *fib_heap_union(fibonacci_heap *fib_heap_first, fibonacci_heap *fib_heap_second) {
-
 	fibonacci_heap *appended_fib_heap = fib_heap_make();
 	fibonacci_node *first_heap_min_node = fib_heap_first->min_node;
 	fibonacci_node *second_heap_min_node = fib_heap_second->min_node;
@@ -139,8 +138,7 @@ fibonacci_heap *fib_heap_union(fibonacci_heap *fib_heap_first, fibonacci_heap *f
 		}
 	}
 
-	appended_fib_heap->num_nodes = fib_heap_first->num_nodes
-			+ fib_heap_second->num_nodes;
+	appended_fib_heap->num_nodes = fib_heap_first->num_nodes + fib_heap_second->num_nodes;
 	return appended_fib_heap;
 }
 
@@ -198,7 +196,8 @@ void fib_heap_consolidate(fibonacci_heap *heap_inst) {
 
 		fibonacci_node* temp_node = heap_inst->min_node;
 		fibonacci_node* iterating_node = heap_inst->min_node;
-        		do {
+        
+		do {
 			root_count++;
 			iterating_node = iterating_node->right;
 		} while (iterating_node != temp_node);
@@ -240,12 +239,8 @@ void fib_heap_consolidate(fibonacci_heap *heap_inst) {
 }
 
 fibonacci_node *fib_heap_extract_min(fibonacci_heap *heap_inst) {
-
 	fibonacci_node *min_node = heap_inst->min_node;
 	ofstream myfile;
-	myfile.open("order_fib.txt", std::ios_base::app);
-
-    	myfile << "FIB -- MIN NODE " << min_node->node_index << endl;
 
 	if (min_node != NULL) {
 		int degree = min_node->degree;
@@ -260,12 +255,17 @@ fibonacci_node *fib_heap_extract_min(fibonacci_heap *heap_inst) {
 		}
 
         fib_heap_remove_node_from_root(min_node);
+
 		heap_inst->num_nodes = heap_inst->num_nodes - 1;
-		if (heap_inst->num_nodes == 0) { 			heap_inst->min_node = NULL;
-		} else { 			heap_inst->min_node = min_node->right; 						fibonacci_node *min_node_left_temp = min_node->left;
+
+		if (heap_inst->num_nodes == 0) { 			
+			heap_inst->min_node = NULL;
+		} else { 			
+			heap_inst->min_node = min_node->right; 						
+			fibonacci_node *min_node_left_temp = min_node->left;
 			heap_inst->min_node->left = min_node_left_temp;
 			min_node_left_temp->right = heap_inst->min_node;
-						fib_heap_consolidate(heap_inst);
+			fib_heap_consolidate(heap_inst);
 		}
 	}
 	return min_node;
@@ -277,7 +277,6 @@ void fib_heap_cut(fibonacci_heap *heap_inst, fibonacci_node *node,
 
 	fib_heap_remove_node_from_root(node);
 	fib_heap_existing_to_root(heap_inst, node);
-
 }
 
 void fib_heap_cascading_cut(fibonacci_heap *heap_inst, fibonacci_node *node) {
@@ -318,6 +317,7 @@ void fib_heap_decrease_key(fibonacci_heap *heap_inst, fibonacci_node *node_inst,
 graph* create_graph(int graph_size) {
 	graph *graph_inst = new graph;
 	graph_inst->num_vertices = graph_size;
+
 	return graph_inst;
 }
 
@@ -328,7 +328,7 @@ void add_edge(graph* graph_obj, int src, int dest, int edge_len) {
 	new_node->edge_len = edge_len;
 	graph_obj->adjacent_list_map[src].push_back(new_node);
 
-		adj_node* new_node_2 = new adj_node;
+	adj_node* new_node_2 = new adj_node;
 	new_node_2->dest_node = src;
 	new_node_2->edge_len = edge_len;
 	graph_obj->adjacent_list_map[dest].push_back(new_node_2);
@@ -357,8 +357,7 @@ int* dijkstra_normal(graph* graph_instance, int src) {
 
 fibonacci_node** dijkstra_fibanocci(graph* graph_instance, int src) {
 	int count_marked = 0;
-    fibonacci_node **node_array =
-			new fibonacci_node*[graph_instance->num_vertices];
+    fibonacci_node **node_array = new fibonacci_node*[graph_instance->num_vertices];
 	bool *marked = new bool[graph_instance->num_vertices];
 	fibonacci_heap *heap_inst = new fibonacci_heap;
     
@@ -378,12 +377,10 @@ fibonacci_node** dijkstra_fibanocci(graph* graph_instance, int src) {
 		count_marked++;
 	}
 
-
 	return node_array;
 }
 
-int get_min_distant_unmarked_node(graph* graph_obj, int *distance_to_dest,
-	bool *marked) {
+int get_min_distant_unmarked_node(graph* graph_obj, int *distance_to_dest, bool *marked) {
     int min_distance = INT_MAX;
 	int min_node_index;
 
@@ -393,29 +390,17 @@ int get_min_distant_unmarked_node(graph* graph_obj, int *distance_to_dest,
 			min_node_index = i;
 		}
 	}
-    ofstream myfile;
-	myfile.open("order_normal.txt", std::ios_base::app);
-	myfile << "NORMAL -- MIN NODE " << min_node_index << ":";
 
-	if (shortest_order[min_node_index].size() < 0) {
-		for (int i = 0; i < shortest_order[min_node_index].size(); i++) {
-			myfile << shortest_order[min_node_index][i] << "-";
-		}
-	}
+	marked[min_node_index] = true;
 
-	myfile << endl;
-	myfile.close();
-		marked[min_node_index] = true;
-
-		list<adj_node*> adj_list_for_node =
-			graph_obj->adjacent_list_map[min_node_index];
+	list<adj_node*> adj_list_for_node =
+		graph_obj->adjacent_list_map[min_node_index];
 
 	for (list<adj_node*>::iterator it = adj_list_for_node.begin();
-			it != adj_list_for_node.end(); ++it) {
+		it != adj_list_for_node.end(); ++it) {
 		int adj_node_index = (*it)->dest_node;
 		if (marked[adj_node_index] == false) {
-			if (distance_to_dest[adj_node_index]
-					> distance_to_dest[min_node_index] + (*it)->edge_len) {
+			if (distance_to_dest[adj_node_index] > distance_to_dest[min_node_index] + (*it)->edge_len) {
 				distance_to_dest[adj_node_index] =
 						distance_to_dest[min_node_index] + (*it)->edge_len;
 				shortest_order[adj_node_index].push_back(min_node_index);
@@ -438,7 +423,7 @@ int get_min_distant_unmarked_node_fib_heap(graph* graph_obj,
 		marked[min_node_index] = true;
 		list<adj_node*> adj_list_for_node = graph_obj->adjacent_list_map[min_node_index];
 		for (list<adj_node*>::iterator it = adj_list_for_node.begin();
-				it != adj_list_for_node.end(); ++it) {
+			it != adj_list_for_node.end(); ++it) {
 			int adj_node_index = (*it)->dest_node;
 
 			if (marked[adj_node_index] == false) {
