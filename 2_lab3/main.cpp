@@ -3,33 +3,10 @@
 #include <map>
 #include <list>
 #include <algorithm>
-#include <bitset>
-#include <dbghelp.h>
 #include <sstream>
 #include <queue>
 
 using namespace std;
-
-string HA_Compress(string input){
-    string output = "";
-    unsigned char ch, last_ch = 0;
-    int count = 0;
-    for(int i=0; i<input.length(); i++){
-        ch = input[i];
-        if(ch == last_ch && count < 255){
-            count++;
-        }
-        else{
-            output += last_ch;
-            output += (unsigned char)count;
-            count = 1;
-            last_ch = ch;
-        }
-    }
-    output += last_ch;
-    output += (unsigned char)count;
-    return output;
-}
 
 string RLE_Compress(string input){
     string output = "";
@@ -90,7 +67,6 @@ string BWT_Compress(string input_str){
     }
     return compressed_str;
 }
-
 
 string MTF_Compress(string input_str){
     string compressed_str = "";
@@ -177,6 +153,47 @@ string AC_compress(const string& input) {
     encoded = codeTableString + encoded;
 
     return encoded;
+}
+
+void encode(Node* root, string str, unordered_map<char, string>& huffmanCode) {
+    if (root == nullptr) {
+        return;
+    }
+    if (!root->left && !root->right) {
+        huffmanCode[root->c] = str;
+    }
+    encode(root->left, str + "0", huffmanCode);
+    encode(root->right, str + "1", huffmanCode);
+}
+
+string buildHuffmanTree(string text, unordered_map<char, int>& freq) {
+    priority_queue<Node*, vector<Node*>, CompareNodes> pq;
+    for (auto& pair : freq) {
+        pq.push(new Node({ pair.first, pair.second, nullptr, nullptr }));
+    }
+    while (pq.size() != 1) {
+        Node* left = pq.top(); pq.pop();
+        Node* right = pq.top(); pq.pop();
+        int sum = left->freq + right->freq;
+        pq.push(new Node({ '\0', sum, left, right }));
+    }
+    unordered_map<char, string> huffmanCode;
+    encode(pq.top(), "", huffmanCode);
+
+    string encoded = "";
+    for (char& ch : text) {
+        encoded += huffmanCode[ch];
+    }
+
+    return encoded;
+}
+
+string HA_Compress(string text) {
+    unordered_map<char, int> freq;
+    for (char& ch : text) {
+        freq[ch]++;
+    }
+    return buildHuffmanTree(text, freq);
 }
 
 struct PPM_Context {
@@ -269,7 +286,6 @@ string PPM_Compress(string input_str){
 }
 
 int main() {
-
 
     return 0;
 }
