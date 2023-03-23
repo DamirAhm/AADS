@@ -8,15 +8,12 @@
 
 using namespace std;
 
-string RLE_Compress(string input)
-{
+string RLE_Compress(string input) {
     string result;
 
-    for (size_t i = 0; i < input.length(); ++i)
-    {
+    for (size_t i = 0; i < input.length(); ++i) {
         int count = 1;
-        while (i < input.length() - 1 && input[i] == input[i + 1])
-        {
+        while (i < input.length() - 1 && input[i] == input[i + 1]) {
             ++count;
             ++i;
         }
@@ -26,61 +23,53 @@ string RLE_Compress(string input)
     return result;
 }
 
-string LZ78_Compress(string input)
-{
+string LZ78_Compress(string input) {
     unordered_map<string, int> dictionary;
     string result;
     string current;
 
-    for (char c : input)
-    {
+    for (char c: input) {
         string next = current + c;
-        if (dictionary.find(next) != dictionary.end())
-        {
+        if (dictionary.find(next) != dictionary.end()) {
             current = next;
-        }
-        else
-        {
+        } else {
             result += to_string(dictionary[current]) + c;
             dictionary[next] = dictionary.size();
             current = "";
         }
     }
 
-    if (!current.empty())
-    {
+    if (!current.empty()) {
         result += to_string(dictionary[current]);
     }
 
     return result;
 }
 
-string BWT_Compress(string input_str){
-    string suffixes[input_str.size()];
-    for(int i=0; i<input_str.size(); i++){
-        suffixes[i] = input_str.substr(i) + input_str.substr(0, i);
+string BWT_Compress(string input) {
+    vector <string> rotations;
+    string bwt;
+
+    for (size_t i = 0; i < input.length(); ++i) {
+        rotations.push_back(input.substr(i) + input.substr(0, i));
     }
-    sort(suffixes, suffixes+input_str.size());
-    string compressed_str = "";
-    for(int i=0; i<input_str.size(); i++){
-        if(suffixes[i].back() == input_str[0]){
-            compressed_str += to_string(i) + "$";
-            break;
-        }
+
+    sort(rotations.begin(), rotations.end());
+
+    for (const auto &rotation: rotations) {
+        bwt += rotation.back();
     }
-    for(int i=0; i<input_str.size(); i++){
-        compressed_str += suffixes[i][input_str.size()-1];
-    }
-    return compressed_str;
+
+    return bwt;
 }
 
-string MTF_Compress(string input_str){
+string MTF_Compress(string input_str) {
     string compressed_str = "";
     list<char> dictionary;
-    for(int i=0; i<256; i++){
+    for (int i = 0; i < 256; i++) {
         dictionary.push_back(char(i));
     }
-    for(char& c : input_str){
+    for (char &c: input_str) {
         auto it = find(dictionary.begin(), dictionary.end(), c);
         int idx = distance(dictionary.begin(), it);
         compressed_str += to_string(idx) + ",";
@@ -94,19 +83,20 @@ string MTF_Compress(string input_str){
 struct Node {
     char c;
     int freq;
-    Node* left;
-    Node* right;
-    Node(char c, int freq, Node* left = nullptr, Node* right = nullptr)
+    Node *left;
+    Node *right;
+
+    Node(char c, int freq, Node *left = nullptr, Node *right = nullptr)
             : c(c), freq(freq), left(left), right(right) {}
 };
 
 struct CompareNodes {
-    bool operator()(Node* a, Node* b) {
+    bool operator()(Node *a, Node *b) {
         return a->freq > b->freq;
     }
 };
 
-string AC_compress(const string& input) {
+string AC_compress(const string &input) {
     // Build frequency table
     std::unordered_map<char, int> freqTable;
     for (char c: input) {
@@ -130,29 +120,29 @@ string AC_compress(const string& input) {
 
     // Build code table
     std::unordered_map<char, std::string> codeTable;
-    std::queue<std::pair<Node*, std::string>> nodeQueue;
-    nodeQueue.push({ root, "" });
+    std::queue<std::pair<Node *, std::string>> nodeQueue;
+    nodeQueue.push({root, ""});
     while (!nodeQueue.empty()) {
-        Node* node = nodeQueue.front().first;
+        Node *node = nodeQueue.front().first;
         std::string code = nodeQueue.front().second;
         nodeQueue.pop();
         if (!node->left && !node->right) {
             codeTable[node->c] = code;
         } else {
-            nodeQueue.push({ node->left, code + "0" });
-            nodeQueue.push({ node->right, code + "1" });
+            nodeQueue.push({node->left, code + "0"});
+            nodeQueue.push({node->right, code + "1"});
         }
     }
 
     // Encode input using code table
     std::string encoded;
-    for (char c : input) {
+    for (char c: input) {
         encoded += codeTable[c];
     }
 
     // Add code table to encoded string
     std::string codeTableString;
-    for (const auto& pair : codeTable) {
+    for (const auto &pair: codeTable) {
         codeTableString += pair.first;
         codeTableString += pair.second;
     }
@@ -161,7 +151,7 @@ string AC_compress(const string& input) {
     return encoded;
 }
 
-void encode(Node* root, string str, unordered_map<char, string>& huffmanCode) {
+void encode(Node *root, string str, unordered_map<char, string> &huffmanCode) {
     if (root == nullptr) {
         return;
     }
@@ -172,22 +162,24 @@ void encode(Node* root, string str, unordered_map<char, string>& huffmanCode) {
     encode(root->right, str + "1", huffmanCode);
 }
 
-string buildHuffmanTree(string text, unordered_map<char, int>& freq) {
-    priority_queue<Node*, vector<Node*>, CompareNodes> pq;
-    for (auto& pair : freq) {
-        pq.push(new Node({ pair.first, pair.second, nullptr, nullptr }));
+string buildHuffmanTree(string text, unordered_map<char, int> &freq) {
+    priority_queue<Node *, vector < Node * >, CompareNodes > pq;
+    for (auto &pair: freq) {
+        pq.push(new Node({pair.first, pair.second, nullptr, nullptr}));
     }
     while (pq.size() != 1) {
-        Node* left = pq.top(); pq.pop();
-        Node* right = pq.top(); pq.pop();
+        Node *left = pq.top();
+        pq.pop();
+        Node *right = pq.top();
+        pq.pop();
         int sum = left->freq + right->freq;
-        pq.push(new Node({ '\0', sum, left, right }));
+        pq.push(new Node({'\0', sum, left, right}));
     }
     unordered_map<char, string> huffmanCode;
     encode(pq.top(), "", huffmanCode);
 
     string encoded = "";
-    for (char& ch : text) {
+    for (char &ch: text) {
         encoded += huffmanCode[ch];
     }
 
@@ -196,7 +188,7 @@ string buildHuffmanTree(string text, unordered_map<char, int>& freq) {
 
 string HA_Compress(string text) {
     unordered_map<char, int> freq;
-    for (char& ch : text) {
+    for (char &ch: text) {
         freq[ch]++;
     }
     return buildHuffmanTree(text, freq);
@@ -216,26 +208,26 @@ T accumulate(InputIterator first, InputIterator last, T init) {
     return init;
 }
 
-string PPM_Compress(string input_str){
+string PPM_Compress(string input_str) {
     const int MAX_ORDER = 6;
     stringstream compressed_str;
-    vector<PPM_Context> contexts(256);
-    for(int i=0; i<256; i++){
+    vector <PPM_Context> contexts(256);
+    for (int i = 0; i < 256; i++) {
         contexts[i].order = 0;
         contexts[i].symbol_count.fill(1);
     }
     int order = 1;
-    while(order <= 6){
-        for(int i=0; i<input_str.size(); i++){
+    while (order <= 6) {
+        for (int i = 0; i < input_str.size(); i++) {
             int ctx_idx = input_str[i];
-            PPM_Context& ctx = contexts[ctx_idx];
-            if(ctx.order == 0){
-                ctx.suffix = input_str.substr(i+1, order-1);
+            PPM_Context &ctx = contexts[ctx_idx];
+            if (ctx.order == 0) {
+                ctx.suffix = input_str.substr(i + 1, order - 1);
                 ctx.suffix += '\0';
             }
-            if(ctx.suffix == input_str.substr(i+1, order)){
-                ctx.symbol_count[input_str[i+order]]++;
-                if(ctx.order == 0){
+            if (ctx.suffix == input_str.substr(i + 1, order)) {
+                ctx.symbol_count[input_str[i + order]]++;
+                if (ctx.order == 0) {
                     ctx.order = order;
                 }
             }
@@ -244,43 +236,43 @@ string PPM_Compress(string input_str){
     }
     order = 6;
     int idx = 0;
-    while(idx < input_str.size()){
+    while (idx < input_str.size()) {
         int ctx_idx = input_str[idx];
-        PPM_Context& ctx = contexts[ctx_idx];
-        while(ctx.order >= 0){
+        PPM_Context &ctx = contexts[ctx_idx];
+        while (ctx.order >= 0) {
             int total_count = accumulate(ctx.symbol_count.begin(), ctx.symbol_count.end(), 0);
             int symbol = -1;
             int cum_count = 0;
             int count_sum = 0;
-            for(int i=0; i<256; i++){
+            for (int i = 0; i < 256; i++) {
                 count_sum += ctx.symbol_count[i];
-                if(count_sum > cum_count && cum_count + ctx.symbol_count[i] <= total_count){
+                if (count_sum > cum_count && cum_count + ctx.symbol_count[i] <= total_count) {
                     symbol = i;
                     cum_count += ctx.symbol_count[i];
                 }
             }
-            if(symbol == -1){
+            if (symbol == -1) {
                 ctx.order--;
                 ctx.suffix.pop_back();
                 continue;
             }
             compressed_str << char(symbol);
-            idx += ctx.order+1;
-            if(idx >= input_str.size()){
+            idx += ctx.order + 1;
+            if (idx >= input_str.size()) {
                 break;
             }
             ctx_idx = input_str[idx];
             ctx = contexts[ctx_idx];
-            if(ctx.order == 0){
-                ctx.suffix = input_str.substr(idx+1, order-1);
+            if (ctx.order == 0) {
+                ctx.suffix = input_str.substr(idx + 1, order - 1);
                 ctx.suffix += '\0';
             }
-            if(ctx.suffix != input_str.substr(idx+1, order)){
+            if (ctx.suffix != input_str.substr(idx + 1, order)) {
                 ctx.order--;
                 ctx.suffix.pop_back();
-            }else{
+            } else {
                 ctx.symbol_count[symbol]++;
-                if(ctx.order < 6){
+                if (ctx.order < 6) {
                     ctx.order++;
                     ctx.suffix += char(symbol);
                 }
@@ -292,7 +284,8 @@ string PPM_Compress(string input_str){
 }
 
 int main() {
-    cout << LZ78_Compress("mat trahal");
+    string res = MTF_Compress("AAAAAS aSDHU JNA  N NNNNN NaS AKKKKK aSA W W W WWAKAL<L l,aNNJfnjan aJnjanj an aNMM");
+    cout << res;
 
     return 0;
 }
