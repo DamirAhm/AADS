@@ -26,24 +26,33 @@ string RLE_Compress(string input)
     return result;
 }
 
-string LZ78_Compress(string input_str){
-    map<string, int> dictionary;
-    int dict_size = 256;
-    string current_str = "", compressed_str = "";
-    for(char& c : input_str){
-        string new_str = current_str + c;
-        if(dictionary.find(new_str) != dictionary.end()){
-            current_str = new_str;
-        }else{
-            compressed_str += to_string(dictionary[current_str]) + c;
-            dictionary[new_str] = dict_size++;
-            current_str = "";
+string LZ78_Compress(string input)
+{
+    unordered_map<string, int> dictionary;
+    string result;
+    string current;
+
+    for (char c : input)
+    {
+        string next = current + c;
+        if (dictionary.find(next) != dictionary.end())
+        {
+            current = next;
+        }
+        else
+        {
+            result += to_string(dictionary[current]) + c;
+            dictionary[next] = dictionary.size();
+            current = "";
         }
     }
-    if(current_str != ""){
-        compressed_str += to_string(dictionary[current_str]);
+
+    if (!current.empty())
+    {
+        result += to_string(dictionary[current]);
     }
-    return compressed_str;
+
+    return result;
 }
 
 string BWT_Compress(string input_str){
@@ -283,7 +292,7 @@ string PPM_Compress(string input_str){
 }
 
 int main() {
-    cout << RLE_Compress("AAABBCCCCDDEEEE");
+    cout << LZ78_Compress("mat trahal");
 
     return 0;
 }
