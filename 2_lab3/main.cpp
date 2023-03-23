@@ -8,25 +8,22 @@
 
 using namespace std;
 
-string RLE_Compress(string input){
-    string output = "";
-    unsigned char ch, last_ch = 0;
-    int count = 0;
-    for(int i=0; i<input.length(); i++){
-        ch = input[i];
-        if(ch == last_ch && count < 255){
-            count++;
+string RLE_Compress(string input)
+{
+    string result;
+
+    for (size_t i = 0; i < input.length(); ++i)
+    {
+        int count = 1;
+        while (i < input.length() - 1 && input[i] == input[i + 1])
+        {
+            ++count;
+            ++i;
         }
-        else{
-            output += (unsigned char)count;
-            output += last_ch;
-            count = 1;
-            last_ch = ch;
-        }
+        result += to_string(count) + input[i];
     }
-    output += (unsigned char)count;
-    output += last_ch;
-    return output;
+
+    return result;
 }
 
 string LZ78_Compress(string input_str){
@@ -286,6 +283,7 @@ string PPM_Compress(string input_str){
 }
 
 int main() {
+    cout << RLE_Compress("AAABBCCCCDDEEEE");
 
     return 0;
 }
