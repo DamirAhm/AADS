@@ -96,61 +96,6 @@ struct CompareNodes {
     }
 };
 
-string AC_compress(const string &input) {
-    // Build frequency table
-    std::unordered_map<char, int> freqTable;
-    for (char c: input) {
-        freqTable[c]++;
-    }
-
-    // Build Huffman tree
-    std::priority_queue<Node *, std::vector<Node *>, CompareNodes> minHeap;
-    for (const auto &pair: freqTable) {
-        minHeap.push(new Node(pair.first, pair.second));
-    }
-    while (minHeap.size() > 1) {
-        Node *left = minHeap.top();
-        minHeap.pop();
-        Node *right = minHeap.top();
-        minHeap.pop();
-        Node *parent = new Node('$', left->freq + right->freq, left, right);
-        minHeap.push(parent);
-    }
-    Node *root = minHeap.top();
-
-    // Build code table
-    std::unordered_map<char, std::string> codeTable;
-    std::queue<std::pair<Node *, std::string>> nodeQueue;
-    nodeQueue.push({root, ""});
-    while (!nodeQueue.empty()) {
-        Node *node = nodeQueue.front().first;
-        std::string code = nodeQueue.front().second;
-        nodeQueue.pop();
-        if (!node->left && !node->right) {
-            codeTable[node->c] = code;
-        } else {
-            nodeQueue.push({node->left, code + "0"});
-            nodeQueue.push({node->right, code + "1"});
-        }
-    }
-
-    // Encode input using code table
-    std::string encoded;
-    for (char c: input) {
-        encoded += codeTable[c];
-    }
-
-    // Add code table to encoded string
-    std::string codeTableString;
-    for (const auto &pair: codeTable) {
-        codeTableString += pair.first;
-        codeTableString += pair.second;
-    }
-    encoded = codeTableString + encoded;
-
-    return encoded;
-}
-
 void encode(Node *root, string str, unordered_map<char, string> &huffmanCode) {
     if (root == nullptr) {
         return;
@@ -163,7 +108,7 @@ void encode(Node *root, string str, unordered_map<char, string> &huffmanCode) {
 }
 
 string buildHuffmanTree(string text, unordered_map<char, int> &freq) {
-    priority_queue<Node *, vector < Node * >, CompareNodes > pq;
+    priority_queue<Node*, vector<Node*>, CompareNodes> pq;
     for (auto &pair: freq) {
         pq.push(new Node({pair.first, pair.second, nullptr, nullptr}));
     }
@@ -183,7 +128,13 @@ string buildHuffmanTree(string text, unordered_map<char, int> &freq) {
         encoded += huffmanCode[ch];
     }
 
-    return encoded;
+    std::string codeTableString;
+    for (const auto &pair: huffmanCode) {
+        codeTableString += pair.first;
+        codeTableString += pair.second;
+    }
+
+    return codeTableString + encoded;
 }
 
 string HA_Compress(string text) {
@@ -194,98 +145,66 @@ string HA_Compress(string text) {
     return buildHuffmanTree(text, freq);
 }
 
-struct PPM_Context {
-    int order;
-    string suffix;
-    array<int, 256> symbol_count;
-};
+string AC_Compress(string text) {
+    long double low = 0;
+    long double high = 1;
 
-template<typename InputIterator, typename T>
-T accumulate(InputIterator first, InputIterator last, T init) {
-    for (InputIterator it = first; it != last; ++it) {
-        init += *it;
+    long double range = 1;
+    int num_chars = 256;
+
+    vector<long double> probabilities(num_chars, 0);
+    for (char c : text) {
+        probabilities[c] += (long double)1 / (long double)text.length();
     }
-    return init;
+    for (int i = 1; i < num_chars; i++) {
+        probabilities[i] += probabilities[i - 1];
+    }
+
+    for (char c : text) {
+        low = low + probabilities[c - 1] * range;
+        high = low + (probabilities[c] - probabilities[c - 1]) * range;
+        range = high - low;
+    }
+
+    return to_string((low + high) / 2);
 }
 
-string PPM_Compress(string input_str) {
-    const int MAX_ORDER = 6;
-    stringstream compressed_str;
-    vector <PPM_Context> contexts(256);
-    for (int i = 0; i < 256; i++) {
-        contexts[i].order = 0;
-        contexts[i].symbol_count.fill(1);
-    }
-    int order = 1;
-    while (order <= 6) {
-        for (int i = 0; i < input_str.size(); i++) {
-            int ctx_idx = input_str[i];
-            PPM_Context &ctx = contexts[ctx_idx];
-            if (ctx.order == 0) {
-                ctx.suffix = input_str.substr(i + 1, order - 1);
-                ctx.suffix += '\0';
-            }
-            if (ctx.suffix == input_str.substr(i + 1, order)) {
-                ctx.symbol_count[input_str[i + order]]++;
-                if (ctx.order == 0) {
-                    ctx.order = order;
-                }
-            }
-        }
-        order++;
-    }
-    order = 6;
-    int idx = 0;
-    while (idx < input_str.size()) {
-        int ctx_idx = input_str[idx];
-        PPM_Context &ctx = contexts[ctx_idx];
-        while (ctx.order >= 0) {
-            int total_count = accumulate(ctx.symbol_count.begin(), ctx.symbol_count.end(), 0);
-            int symbol = -1;
-            int cum_count = 0;
-            int count_sum = 0;
-            for (int i = 0; i < 256; i++) {
-                count_sum += ctx.symbol_count[i];
-                if (count_sum > cum_count && cum_count + ctx.symbol_count[i] <= total_count) {
-                    symbol = i;
-                    cum_count += ctx.symbol_count[i];
-                }
-            }
-            if (symbol == -1) {
-                ctx.order--;
-                ctx.suffix.pop_back();
-                continue;
-            }
-            compressed_str << char(symbol);
-            idx += ctx.order + 1;
-            if (idx >= input_str.size()) {
+string ppm_encode(const string& input) {
+    map<string, int> freq;
+    string output = "";
+
+    for (int i = 0; i < input.length(); i++) {
+        string context = "";
+        int max_order = min(i, 5);
+        for (int j = 1; j <= max_order; j++) {
+            context = input.substr(i - j, j);
+            if (freq.count(context)) {
                 break;
             }
-            ctx_idx = input_str[idx];
-            ctx = contexts[ctx_idx];
-            if (ctx.order == 0) {
-                ctx.suffix = input_str.substr(idx + 1, order - 1);
-                ctx.suffix += '\0';
-            }
-            if (ctx.suffix != input_str.substr(idx + 1, order)) {
-                ctx.order--;
-                ctx.suffix.pop_back();
-            } else {
-                ctx.symbol_count[symbol]++;
-                if (ctx.order < 6) {
-                    ctx.order++;
-                    ctx.suffix += char(symbol);
+        }
+
+        if (freq.count(context)) {
+            char best_char = 0;
+            int best_freq = 0;
+            for (char c = 0; c < 128 && c > 0; c++) {
+                string symbol = context + c;
+                if (freq.count(symbol) && freq[symbol] > best_freq) {
+                    best_char = c;
+                    best_freq = freq[symbol];
                 }
             }
+            output += best_char;
+            freq[context + best_char]++;
+        } else {
+            output += input[i];
+            freq[string(1, input[i])]++;
         }
-        order = 6;
     }
-    return compressed_str.str();
+
+    return output;
 }
 
 int main() {
-    string res = MTF_Compress("AAAAAS aSDHU JNA  N NNNNN NaS AKKKKK aSA W W W WWAKAL<L l,aNNJfnjan aJnjanj an aNMM");
-    cout << res;
 
     return 0;
 }
