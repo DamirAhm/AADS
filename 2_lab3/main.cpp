@@ -186,7 +186,7 @@ string ppm_encode(const string& input) {
         if (freq.count(context)) {
             char best_char = 0;
             int best_freq = 0;
-            for (char c = 0; c < 128 && c > 0; c++) {
+            for (char c = 0; c < 127; c++) {
                 string symbol = context + c;
                 if (freq.count(symbol) && freq[symbol] > best_freq) {
                     best_char = c;
@@ -205,6 +205,9 @@ string ppm_encode(const string& input) {
 }
 
 int main() {
-
+    string input = "hello world!";
+    string compressed = ppm_encode(input);
+    cout << "Original: " << input << endl;
+    cout << "Compressed: " << compressed << endl;
     return 0;
 }
