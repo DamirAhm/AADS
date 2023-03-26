@@ -23,27 +23,37 @@ string RLE_Compress(string input) {
     return result;
 }
 
+struct LZNode {
+    int pos;
+    char next;
+};
 string LZ78_Compress(string input) {
-    unordered_map<string, int> dictionary;
-    string result;
-    string current;
-
-    for (char c: input) {
-        string next = current + c;
-        if (dictionary.find(next) != dictionary.end()) {
-            current = next;
+    string buffer = "";
+    map<string, int> dict = {};
+    list<LZNode> ans = {};
+    for (int i = 0; i < input.length(); i++) {
+        if (dict.find(buffer + input[i]) != dict.end()) {
+            buffer += input[i];
         } else {
-            result += to_string(dictionary[current]) + c;
-            dictionary[next] = dictionary.size();
-            current = "";
+            ans.push_back({dict[buffer], input[i]});
+            dict[buffer + input[i]] = dict.size();
+            buffer = "";
         }
     }
+    
+    if (!buffer.empty()) {
+        char last_ch = buffer[buffer.length() - 1];
+        buffer.pop_back();
+        ans.push_back({dict[buffer], last_ch});
+    }
+    
+    string res = "";
 
-    if (!current.empty()) {
-        result += to_string(dictionary[current]);
+    for (LZNode node : ans) {
+        res += to_string(node.pos) + node.next + "|";
     }
 
-    return result;
+    return res;
 }
 
 string BWT_Compress(string input) {
@@ -205,8 +215,8 @@ string ppm_encode(const string& input) {
 }
 
 int main() {
-    string input = "hello world!";
-    string compressed = ppm_encode(input);
+    string input = "abacababacabc";
+    string compressed = LZ78_Compress(input);
     cout << "Original: " << input << endl;
     cout << "Compressed: " << compressed << endl;
     return 0;
