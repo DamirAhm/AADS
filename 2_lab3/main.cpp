@@ -27,7 +27,7 @@ struct LZNode {
     int pos;
     char next;
 };
-string LZ78_Compress(string input) {
+list<LZNode> LZ78_Compress(string input) {
     string buffer = "";
     map<string, int> dict = {};
     list<LZNode> ans = {};
@@ -47,13 +47,7 @@ string LZ78_Compress(string input) {
         ans.push_back({dict[buffer], last_ch});
     }
     
-    string res = "";
-
-    for (LZNode node : ans) {
-        res += to_string(node.pos) + node.next + "|";
-    }
-
-    return res;
+    return ans;
 }
 
 string BWT_Compress(string input) {
