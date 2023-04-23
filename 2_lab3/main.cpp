@@ -28,31 +28,32 @@ struct LZNode {
     char next;
 };
 list<LZNode> LZ78_Compress(string input) {
-    string buffer = "";
-    map<string, int> dict = {};
-    list<LZNode> ans = {};
+    string substring = "";
+    map<string, int> dictionary = {};
+    list<LZNode> compressed_data = {};
+
     for (int i = 0; i < input.length(); i++) {
-        if (dict.find(buffer + input[i]) != dict.end()) {
-            buffer += input[i];
+        if (dictionary.find(substring + input[i]) != dictionary.end()) {
+            substring += input[i];
         } else {
-            ans.push_back({dict[buffer], input[i]});
-            dict[buffer + input[i]] = dict.size();
-            buffer = "";
+            compressed_data.push_back({dictionary[substring], input[i]});
+            dictionary[substring + input[i]] = dictionary.size();
+            substring = "";
         }
     }
-    
-    if (!buffer.empty()) {
-        char last_ch = buffer[buffer.length() - 1];
-        buffer.pop_back();
-        ans.push_back({dict[buffer], last_ch});
+
+    if (!substring.empty()) {
+        char last_char = substring[substring.length() - 1];
+        substring.pop_back();
+        compressed_data.push_back({dictionary[substring], last_char});
     }
-    
-    return ans;
+
+    return compressed_data;
 }
 
 string BWT_Compress(string input) {
-    vector <string> rotations;
-    string bwt;
+    vector<string> rotations;
+    string transformed_data = "";
 
     for (size_t i = 0; i < input.length(); ++i) {
         rotations.push_back(input.substr(i) + input.substr(0, i));
@@ -60,11 +61,11 @@ string BWT_Compress(string input) {
 
     sort(rotations.begin(), rotations.end());
 
-    for (const auto &rotation: rotations) {
-        bwt += rotation.back();
+    for (const auto &rotation : rotations) {
+        transformed_data += rotation.back();
     }
 
-    return bwt;
+    return transformed_data;
 }
 
 string MTF_Compress(string input_str) {
@@ -132,7 +133,7 @@ string buildHuffmanTree(string text, unordered_map<char, int> &freq) {
         encoded += huffmanCode[ch];
     }
 
-    std::string codeTableString;
+    string codeTableString;
     for (const auto &pair: huffmanCode) {
         codeTableString += pair.first;
         codeTableString += pair.second;
@@ -150,27 +151,37 @@ string HA_Compress(string text) {
 }
 
 string AC_Compress(string text) {
-    long double low = 0;
-    long double high = 1;
-
-    long double range = 1;
-    int num_chars = 256;
-
-    vector<long double> probabilities(num_chars, 0);
+    std::map<char, int> freq_table;
     for (char c : text) {
-        probabilities[c] += (long double)1 / (long double)text.length();
-    }
-    for (int i = 1; i < num_chars; i++) {
-        probabilities[i] += probabilities[i - 1];
+        freq_table[c]++;
     }
 
+    // Compute the cumulative frequency table
+    std::map<char, double> cum_freq_table;
+    double cum_freq = 0.0;
+    for (auto it = freq_table.begin(); it != freq_table.end(); ++it) {
+        cum_freq_table[it->first] = cum_freq;
+        cum_freq += it->second;
+    }
+
+    // Normalize the cumulative frequency table
+    double total_freq = cum_freq;
+    for (auto it = cum_freq_table.begin(); it != cum_freq_table.end(); ++it) {
+        it->second /= total_freq;
+    }
+
+    // Initialize the range
+    double range_low = 0.0;
+    double range_high = 1.0;
+
+    // Encode each character in the input string
     for (char c : text) {
-        low = low + probabilities[c - 1] * range;
-        high = low + (probabilities[c] - probabilities[c - 1]) * range;
-        range = high - low;
+        double range_size = range_high - range_low;
+        range_high = range_low + range_size * cum_freq_table[c] + range_size * freq_table[c] / total_freq;
+        range_low = range_low + range_size * cum_freq_table[c];
     }
 
-    return to_string((low + high) / 2);
+    return to_string((range_low + range_high) / 2);
 }
 
 string ppm_encode(const string& input) {
@@ -209,9 +220,5 @@ string ppm_encode(const string& input) {
 }
 
 int main() {
-    string input = "abacababacabc";
-    string compressed = LZ78_Compress(input);
-    cout << "Original: " << input << endl;
-    cout << "Compressed: " << compressed << endl;
     return 0;
 }
